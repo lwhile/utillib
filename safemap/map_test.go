@@ -40,3 +40,25 @@ func TestSafeMap(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func BenchmarkSafeMap(b *testing.B) {
+	m := NewMap()
+	wg := sync.WaitGroup{}
+	for i := 0; i < b.N; i++ {
+		wg.Add(1)
+		go func(i int) {
+			m.Push(strconv.Itoa(i), i)
+			defer wg.Done()
+		}(i)
+	}
+
+	wg.Wait()
+	for i := 0; i < b.N; i++ {
+		wg.Add(1)
+		go func(i int) {
+			m.Pop(strconv.Itoa(i))
+			defer wg.Done()
+		}(i)
+	}
+	wg.Wait()
+}

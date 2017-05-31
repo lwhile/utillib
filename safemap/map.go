@@ -1,12 +1,10 @@
 package safemap
 
-// 参考自云风的blog:
-// http://blog.codingnow.com/2011/03/go_2.html
-// 原作者拥有这段代码的一切权力.
-
 type iMap interface {
-	Push(key string, e interface{}) interface{}
-	Pop(key string) interface{}
+	Set(key string, value interface{})
+	Get(key string) (interface{}, bool)
+	Delete(key string)
+	Len() int
 }
 
 type mapPair struct {
@@ -14,49 +12,70 @@ type mapPair struct {
 	value interface{}
 }
 
+type valuePair struct {
+	value interface{}
+	exist bool
+}
+
 type mapChan struct {
-	pushReq chan *mapPair
-	pushRep chan interface{}
-	popReq  chan string
-	popRep  chan interface{}
+	m      map[string]interface{}
+	setReq chan *mapPair
+	setRep chan interface{}
+
+	getReq chan string
+	getRep chan *valuePair
+
+	delReq chan string
+	delRep chan interface{}
 }
 
-func (c *mapChan) Push(key string, value interface{}) interface{} {
-	c.pushReq <- &mapPair{key, value}
-	return <-c.pushRep
+func (c *mapChan) Set(key string, value interface{}) {
+	c.setReq <- &mapPair{key, value}
+	<-c.setRep
 }
 
-func (c *mapChan) Pop(key string) interface{} {
-	c.popReq <- key
-	return <-c.popRep
+func (c *mapChan) Get(key string) (interface{}, bool) {
+	c.getReq <- key
+	vp := <-c.getRep
+	return vp.value, vp.exist
+}
+
+func (c *mapChan) Delete(key string) {
+	c.delReq <- key
+	<-c.delRep
+}
+
+func (c *mapChan) Len() int {
+	return len(c.m)
 }
 
 // NewMap return a iMap instance
 func NewMap() iMap {
 	c := mapChan{
-		pushReq: make(chan *mapPair),
-		pushRep: make(chan interface{}),
-		popReq:  make(chan string),
-		popRep:  make(chan interface{}),
+		m:      make(map[string]interface{}),
+		setReq: make(chan *mapPair),
+		setRep: make(chan interface{}),
+		getReq: make(chan string),
+		getRep: make(chan *valuePair),
+		delReq: make(chan string),
+		delRep: make(chan interface{}),
 	}
-	m := make(map[string]interface{})
+
 	go func() {
 		for {
 			select {
-			case r := <-c.pushReq:
-				if v, exist := m[r.key]; exist {
-					c.pushRep <- v
+			case r := <-c.setReq:
+				c.m[r.key] = r.value
+				c.setRep <- nil
+			case k := <-c.getReq:
+				if v, exist := c.m[k]; exist {
+					c.getRep <- &valuePair{v, true}
 				} else {
-					m[r.key] = r.value
-					c.pushRep <- nil
+					c.getRep <- &valuePair{nil, false}
 				}
-			case k := <-c.popReq:
-				if v, exist := m[k]; exist {
-					delete(m, k)
-					c.popRep <- v
-				} else {
-					c.popRep <- nil
-				}
+			case k := <-c.delReq:
+				delete(c.m, k)
+				c.delRep <- nil
 			}
 		}
 	}()

@@ -9,27 +9,30 @@ type lockMap struct {
 	m map[string]interface{}
 }
 
-func (lm *lockMap) Push(key string, value interface{}) interface{} {
+func (lm *lockMap) Set(key string, value interface{}) {
 	lm.Lock()
 	defer lm.Unlock()
-	if v, exist := lm.m[key]; exist {
-		return v
-	}
 	lm.m[key] = value
-	return nil
 }
 
-func (lm *lockMap) Pop(key string) interface{} {
+func (lm *lockMap) Get(key string) (interface{}, bool) {
 	lm.Lock()
 	defer lm.Unlock()
-	if v, exist := lm.m[key]; exist {
-		delete(lm.m, key)
-		return v
-	}
-	return nil
+	v, exist := lm.m[key]
+	return v, exist
 }
 
-func NewLockMap() *lockMap {
+func (lm *lockMap) Delete(key string) {
+	lm.Lock()
+	defer lm.Unlock()
+	delete(lm.m, key)
+}
+
+func (lm *lockMap) Len() int {
+	return len(lm.m)
+}
+
+func NewLockMap() iMap {
 	lm := lockMap{}
 	lm.m = make(map[string]interface{})
 	return &lm

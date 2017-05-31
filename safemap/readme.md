@@ -6,8 +6,7 @@ safemap包实现了一个并发安全的map类型,相比常规的加锁方案,�
 
 ## Benchmark
 
-> cd safemap
-> go test -run= map_test.go map.go map1.go -bench=.
+> cd safemap && go test -run= map_test.go map.go map1.go -bench=.
 
 
 |                  | loop  |  ns/op |

@@ -68,7 +68,7 @@ func TestSafeMap(t *testing.T) {
 }
 
 func TestLockMap(t *testing.T) {
-	m := NewLockMap()
+	m := newLockMap()
 	size := 10000
 	wg := sync.WaitGroup{}
 	for i := 0; i < size; i++ {
@@ -133,7 +133,7 @@ func BenchmarkSafeMap(b *testing.B) {
 }
 
 func BenchmarkLockMap(b *testing.B) {
-	m := NewLockMap()
+	m := newLockMap()
 	wg := sync.WaitGroup{}
 	for i := 0; i < b.N; i++ {
 		wg.Add(1)

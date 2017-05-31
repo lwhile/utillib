@@ -19,7 +19,8 @@ safemap包实现了一个并发安全的map类型,相比常规的加锁方案,�
 
     import 	"github.com/lwhile/utillib/safemap"
 
-
+    // setter,getter,delete,len这四类操作的表现特性与内置map类型一致
+    // 注意Len方法没有实现并发安全
 	m := safemap.NewMap()
 	m.Set("key", "value") 
 	value, exist := m.Get("key")

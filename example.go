@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/lwhile/utillib/safemap"
+	"github.com/lwhile/utillib/strs"
 )
 
 func main() {
@@ -10,4 +11,6 @@ func main() {
 	m.Get("key")
 	m.Len()
 	m.Delete("key")
+
+	strs.WildcardMatch()
 }

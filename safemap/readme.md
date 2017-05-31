@@ -22,7 +22,7 @@ safemap包实现了一个并发安全的map类型,相比常规的加锁方案,�
     // setter,getter,delete,len这四类操作的表现特性与内置map类型一致
     // 注意Len方法没有实现并发安全
 	m := safemap.NewMap()
-	m.Set("key", "value") 
-	value, exist := m.Get("key")
-	m.Len()
+	m.Set("key", "value") 	 
+	value, exist := m.Get("key") // 第一个返回数据的类型为接口类型.若键值不存在则返回 nil,false
+	m.Len() 	             // 返回map的大小,返回类型为int
 	m.Delete("key")

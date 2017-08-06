@@ -4,6 +4,7 @@ package safemap
 type SafeMap interface {
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)
+	GetAll() map[string]interface{}
 	Delete(key string)
 	Len() int
 }
@@ -26,7 +27,7 @@ type mapChan struct {
 	getReqChan chan string
 	getRepChan chan *valuePair
 
-	getAllReqChan chan string
+	getAllReqChan chan struct{}
 	getAllRepChan chan *mapPair
 
 	delReqChan chan string
@@ -46,9 +47,22 @@ func (c *mapChan) Get(key string) (interface{}, bool) {
 
 func (c *mapChan) GetAll() map[string]interface{} {
 	m := make(map[string]interface{})
-	for mp := range c.getAllRepChan {
-		m[mp.key] = mp.value
-	}
+	c.getAllReqChan <- struct{}{}
+	done := make(chan struct{})
+	var count int
+	go func() {
+		for {
+			select {
+			case vp := <-c.getAllRepChan:
+				m[vp.key] = vp.value
+				count++
+				if count == c.Len() {
+					close(done)
+				}
+			}
+		}
+	}()
+	<-done
 	return m
 }
 
@@ -64,13 +78,15 @@ func (c *mapChan) Len() int {
 // NewMap return a iMap instance
 func NewMap() SafeMap {
 	c := mapChan{
-		m:          make(map[string]interface{}),
-		setReqChan: make(chan *mapPair),
-		setRepChan: make(chan interface{}),
-		getReqChan: make(chan string),
-		getRepChan: make(chan *valuePair),
-		delReqChan: make(chan string),
-		delRepChan: make(chan interface{}),
+		m:             make(map[string]interface{}),
+		setReqChan:    make(chan *mapPair),
+		setRepChan:    make(chan interface{}),
+		getReqChan:    make(chan string),
+		getRepChan:    make(chan *valuePair),
+		getAllReqChan: make(chan struct{}),
+		getAllRepChan: make(chan *mapPair),
+		delReqChan:    make(chan string),
+		delRepChan:    make(chan interface{}),
 	}
 
 	go func() {

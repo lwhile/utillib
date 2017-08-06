@@ -47,6 +47,11 @@ func TestSafeMap(t *testing.T) {
 
 	wg.Wait()
 
+	allM := m.GetAll()
+	if len(allM) != size {
+		t.Fatalf("allM size %d != %d\n", len(allM), size)
+	}
+
 	// test get item which no exist
 	_, ok := m.Get("test")
 	if ok {

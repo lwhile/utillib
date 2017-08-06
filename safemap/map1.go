@@ -22,6 +22,12 @@ func (lm *lockMap) Get(key string) (interface{}, bool) {
 	return v, exist
 }
 
+func (lm *lockMap) GetAll() map[string]interface{} {
+	lm.Lock()
+	defer lm.Unlock()
+	return lm.m
+}
+
 func (lm *lockMap) Delete(key string) {
 	lm.Lock()
 	defer lm.Unlock()

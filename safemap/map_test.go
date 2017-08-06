@@ -45,7 +45,7 @@ func TestSafeMap(t *testing.T) {
 		}(i)
 	}
 
-	//wg.Wait()
+	wg.Wait()
 
 	// test get item which no exist
 	_, ok := m.Get("test")
@@ -73,6 +73,8 @@ func TestLockMap(t *testing.T) {
 	m := newLockMap()
 	size := 10000
 	wg := sync.WaitGroup{}
+
+	// test set method
 	for i := 0; i < size; i++ {
 		wg.Add(1)
 		go func(i int) {
@@ -80,8 +82,9 @@ func TestLockMap(t *testing.T) {
 			wg.Done()
 		}(i)
 	}
-
 	wg.Wait()
+
+	// test get method
 	for i := 0; i < size; i++ {
 		wg.Add(1)
 		go func(i int) {

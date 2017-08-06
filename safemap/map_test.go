@@ -45,6 +45,8 @@ func TestSafeMap(t *testing.T) {
 		}(i)
 	}
 
+	//wg.Wait()
+
 	// test get item which no exist
 	_, ok := m.Get("test")
 	if ok {
@@ -85,7 +87,7 @@ func TestLockMap(t *testing.T) {
 		go func(i int) {
 			v, ok := m.Get(strconv.Itoa(i))
 			if !ok {
-				t.Errorf("No exist key %d\n", strconv.Itoa(i))
+				t.Errorf("No exist key %s\n", strconv.Itoa(i))
 			} else {
 				if vv, ok := v.(int); ok {
 					if vv != i {

@@ -32,7 +32,7 @@ func (lm *lockMap) Len() int {
 	return len(lm.m)
 }
 
-func newLockMap() iMap {
+func newLockMap() SafeMap {
 	lm := lockMap{}
 	lm.m = make(map[string]interface{})
 	return &lm

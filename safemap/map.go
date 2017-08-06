@@ -1,6 +1,7 @@
 package safemap
 
-type iMap interface {
+// SafeMap interface
+type SafeMap interface {
 	Set(key string, value interface{})
 	Get(key string) (interface{}, bool)
 	Delete(key string)
@@ -18,31 +19,42 @@ type valuePair struct {
 }
 
 type mapChan struct {
-	m      map[string]interface{}
-	setReq chan *mapPair
-	setRep chan interface{}
+	m          map[string]interface{}
+	setReqChan chan *mapPair
+	setRepChan chan interface{}
 
-	getReq chan string
-	getRep chan *valuePair
+	getReqChan chan string
+	getRepChan chan *valuePair
 
-	delReq chan string
-	delRep chan interface{}
+	getAllReqChan chan string
+	getAllRepChan chan *mapPair
+
+	delReqChan chan string
+	delRepChan chan interface{}
 }
 
 func (c *mapChan) Set(key string, value interface{}) {
-	c.setReq <- &mapPair{key, value}
-	<-c.setRep
+	c.setReqChan <- &mapPair{key, value}
+	<-c.setRepChan
 }
 
 func (c *mapChan) Get(key string) (interface{}, bool) {
-	c.getReq <- key
-	vp := <-c.getRep
+	c.getReqChan <- key
+	vp := <-c.getRepChan
 	return vp.value, vp.exist
 }
 
+func (c *mapChan) GetAll() map[string]interface{} {
+	m := make(map[string]interface{})
+	for mp := range c.getAllRepChan {
+		m[mp.key] = mp.value
+	}
+	return m
+}
+
 func (c *mapChan) Delete(key string) {
-	c.delReq <- key
-	<-c.delRep
+	c.delReqChan <- key
+	<-c.delRepChan
 }
 
 func (c *mapChan) Len() int {
@@ -50,32 +62,36 @@ func (c *mapChan) Len() int {
 }
 
 // NewMap return a iMap instance
-func NewMap() iMap {
+func NewMap() SafeMap {
 	c := mapChan{
-		m:      make(map[string]interface{}),
-		setReq: make(chan *mapPair),
-		setRep: make(chan interface{}),
-		getReq: make(chan string),
-		getRep: make(chan *valuePair),
-		delReq: make(chan string),
-		delRep: make(chan interface{}),
+		m:          make(map[string]interface{}),
+		setReqChan: make(chan *mapPair),
+		setRepChan: make(chan interface{}),
+		getReqChan: make(chan string),
+		getRepChan: make(chan *valuePair),
+		delReqChan: make(chan string),
+		delRepChan: make(chan interface{}),
 	}
 
 	go func() {
 		for {
 			select {
-			case r := <-c.setReq:
+			case r := <-c.setReqChan:
 				c.m[r.key] = r.value
-				c.setRep <- nil
-			case k := <-c.getReq:
+				c.setRepChan <- nil
+			case k := <-c.getReqChan:
 				if v, exist := c.m[k]; exist {
-					c.getRep <- &valuePair{v, true}
+					c.getRepChan <- &valuePair{v, true}
 				} else {
-					c.getRep <- &valuePair{nil, false}
+					c.getRepChan <- &valuePair{nil, false}
 				}
-			case k := <-c.delReq:
+			case <-c.getAllReqChan:
+				for k, v := range c.m {
+					c.getAllRepChan <- &mapPair{k, v}
+				}
+			case k := <-c.delReqChan:
 				delete(c.m, k)
-				c.delRep <- nil
+				c.delRepChan <- nil
 			}
 		}
 	}()

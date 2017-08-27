@@ -1,7 +1,7 @@
 # SafeMap
 
 safemap包实现了一个并发安全的map类型,相比常规的加锁方案,包里使用另外一种思路,即使用channel代替mutex.
-经过测试,使用channel代替mutex可以带来3-4倍的性能提升.
+
 
 
 ## Benchmark
